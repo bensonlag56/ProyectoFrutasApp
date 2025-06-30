@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector de Frutas 🍓</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="background-animation">
+        <!-- Partículas animadas -->
+        <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="particle" style="left: 20%; animation-delay: 1s;"></div>
+        <div class="particle" style="left: 30%; animation-delay: 2s;"></div>
+        <div class="particle" style="left: 40%; animation-delay: 0.5s;"></div>
+        <div class="particle" style="left: 50%; animation-delay: 1.5s;"></div>
+        <div class="particle" style="left: 60%; animation-delay: 2.5s;"></div>
+        <div class="particle" style="left: 70%; animation-delay: 0.3s;"></div>
+        <div class="particle" style="left: 80%; animation-delay: 1.8s;"></div>
+        <div class="particle" style="left: 90%; animation-delay: 2.2s;"></div>
+    </div>
+
+    <div class="main-container">
+        <div class="container fade-in">
+            <h1 class="title">🍌 Detector de Estado de Frutas y Verduras 🍓</h1>
+
+            <form method="post" enctype="multipart/form-data" id="uploadForm" class="upload-form">
+                <!-- Zona de arrastre mejorada -->
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-content">
+                        <div class="drop-zone-icon">📂</div>
+                        <div>
+                            <strong>Arrastra una imagen aquí</strong>
+                            <p style="margin-top: 0.5rem; opacity: 0.7;">o haz clic para seleccionar</p>
+                        </div>
+                        <small style="opacity: 0.6;">Formatos soportados: JPG, PNG, GIF</small>
+                    </div>
+                </div>
+
+                <!-- Input de archivo oculto -->
+                <div class="file-input-wrapper">
+                    <input type="file" name="imagen" id="fileInput" accept="image/*" class="file-input" required>
+                </div>
+
+                <button type="submit" class="detect-button">
+                    🔍 Analizar Imagen
+                </button>
+            </form>
+
+            <!-- Indicador de carga -->
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analizando imagen...</p>
+            </div>
+
+            <!-- Sección de resultados -->
+            {% if imagen or resultado %}
+            <div class="results-section">
+                {% if imagen %}
+                <div class="image-container">
+                    <h2 class="section-title">🖼️ Imagen Analizada</h2>
+                    <img src="{{ imagen }}" alt="Imagen de fruta" class="uploaded-image">
+                </div>
+                {% endif %}
+
+                {% if resultado %}
+                <div class="result-container">
+                    <h2 class="section-title">📊 Resultado del Análisis</h2>
+                    <div class="result-panel {% if 'Mal estado' in resultado %}bad-state{% endif %}">
+                        <p class="result-text">{{ resultado }}</p>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill {% if 'Mal estado' in resultado %}bad-state{% endif %}" 
+                                 style="width: {{ resultado.split('(')[1].split('%')[0] if '(' in resultado else '0' }}%"></div>
+                        </div>
+                        <small style="margin-top: 0.5rem; display: block; opacity: 0.8;">
+                            Nivel de confianza: {{ resultado.split('(')[1].split(')')[0] if '(' in resultado else 'N/A' }}
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+        const uploadForm = document.getElementById("uploadForm");
+        const loading = document.getElementById("loading");
+
+        // Click en zona = abrir selector
+        dropZone.addEventListener("click", () => fileInput.click());
+
+        // Eventos de drag & drop
+        dropZone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZone.classList.add("dragover");
+        });
+
+        dropZone.addEventListener("dragleave", () => {
+            dropZone.classList.remove("dragover");
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                showLoading();
+                uploadForm.submit();
+            }
+        });
+
+        // Mostrar loading al enviar formulario
+        uploadForm.addEventListener("submit", (e) => {
+            if (fileInput.files.length > 0) {
+                showLoading();
+            }
+        });
+
+        function showLoading() {
+            loading.style.display = 'block';
+            document.querySelector('.upload-form').style.opacity = '0.5';
+        }
+
+        // Cambio en input de archivo
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length > 0) {
+                dropZone.innerHTML = `
+                    <div class="drop-zone-content">
+                        <div class="drop-zone-icon">✅</div>
+                        <div>
+                            <strong>Archivo seleccionado:</strong>
+                            <p style="margin-top: 0.5rem;">${fileInput.files[0].name}</p>
+                        </div>
+                        <small style="opacity: 0.6;">Haz clic en "Analizar Imagen" para continuar</small>
+                    </div>
+                `;
+            }
+        });
+
+        // Animación de la barra de confianza al cargar
+        window.addEventListener('load', () => {
+            const confidenceFill = document.querySelector('.confidence-fill');
+            if (confidenceFill) {
+                const width = confidenceFill.style.width;
+                confidenceFill.style.width = '0%';
+                setTimeout(() => {
+                    confidenceFill.style.width = width;
+                }, 500);
+            }
+        });
+    </script>
+</body>
+</html>
